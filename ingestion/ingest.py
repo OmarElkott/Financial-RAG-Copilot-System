@@ -2,18 +2,12 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 import json
 
-'''
-3. Add metadata extraction early
-You'll need document_id, company, ticker, document_type, fiscal_period, source_uri, etc.
-
-Start extracting these from filenames or HTML headers now, even if you refine later.
-'''
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "raw" / "tech"
 OUTPUT_DIR = Path(__file__).resolve().parent.parent / "data" / "processed"
 
-def extract_metadata(file_path: Path) -> dict:
-    name = file_path.name
+def extract_metadata(file_path: Path, text_blocks, full_text) -> dict:
+    # name = file_path.name
 
     # Defaults
     ticker = "UNKNOWN"
@@ -47,7 +41,10 @@ def extract_metadata(file_path: Path) -> dict:
         "source_uri": file_path.name,
         "document_type": document_type,
         "fiscal_period": fiscal_period,
-        "company": company
+        "company": company,
+        "file_name": file_path.name,
+        "content": text_blocks,
+        "full_text": full_text,
     }
 
 def parse_html(file_path: Path) -> dict:
@@ -64,15 +61,10 @@ def parse_html(file_path: Path) -> dict:
         if text:
             text_blocks.append({"type": tag.name, "text": text})
 
-    metadata = extract_metadata(file_path)
-    
     full_text = " ".join(block["text"] for block in text_blocks)
-    return {
-        **metadata,
-        "file_name": file_path.name,
-        "content": text_blocks,
-        "full_text": full_text,
-    }
+    metadata = extract_metadata(file_path, text_blocks, full_text)
+    
+    return metadata
 
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
