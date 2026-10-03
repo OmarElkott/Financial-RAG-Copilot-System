@@ -3,8 +3,6 @@ from pathlib import Path
 import uuid
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-from qdrant_client.http import models
-
 
 client = QdrantClient(host="localhost", port=6333)
 COLLECTION_NAME = "finance_chunks"
