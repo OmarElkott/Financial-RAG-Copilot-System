@@ -1,5 +1,7 @@
+import time
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
+from langfuse import observe, get_client
 
 # Initialize once at module load
 client = QdrantClient(host="localhost", port=6333)
@@ -7,7 +9,9 @@ model = SentenceTransformer("BAAI/bge-small-en-v1.5")
 
 COLLECTION_NAME = "finance_chunks"
 
+@observe(name="retrieval")
 def retrieve(query: str, top_k: int = 5):
+    start = time.perf_counter()
     # 1. Embed the query
     query_vector = model.encode(query).tolist()
 
@@ -32,4 +36,11 @@ def retrieve(query: str, top_k: int = 5):
             "source_uri": hit.payload.get("source_uri"),
             "score": hit.score,
         })
+        
+    get_client().update_current_span(metadata={
+        "top_k": top_k,
+        "n_results": len(chunks),
+        "top_score": chunks[0]["score"] if chunks else None,
+        "latency_ms": round((time.perf_counter() - start) * 1000, 1),
+    })
     return chunks
